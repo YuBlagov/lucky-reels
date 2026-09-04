@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lucky Reels - Slot Machine</title>
+</head>
+
+<body>
+    <main class="cabinet">
+        <header class="cabinet__header">
+            <h1>Lucky <span>Reels</span> </h1>
+        </header>
+        <section class="machine">
+            <div class="machine__glass">
+                <div class="reels">
+                    <div class="reel">
+                        <div class="reel__strip" id="strip-0"></div>
+                    </div>
+                    <div class="reel">
+                        <div class="reel__strip" id="strip-1"></div>
+                    </div>
+                    <div class="reel">
+                        <div class="reel__strip" id="strip-2"></div>
+                    </div>
+                </div>
+                <svg class="paylines" viewBox="0 0 300 300" preserveAspectRatio="none">
+                    <line class="payline" id="line-top" x1="0" y1="50" x2="300" y2="50" />
+                    <line class="payline" id="line-mid" x1="0" y1="150" x2="300" y2="150" />
+                    <line class="payline" id="line-bot" x1="0" y1="250" x2="300" y2="250" />
+                    <line class="payline" id="line-diag1" x1="0" y1="50" x2="300" y2="250" />
+                    <line class="payline" id="line-diag2" x1="0" y1="250" x2="300" y2="50" />
+                </svg>
+            </div>
+
+            <div class="message" id="message">Place your bet and spin!</div>
+
+            <div class="controls">
+                <div class="stat">
+                    <span class="stat__label">Credits</span>
+                    <span class="stat__value" id="credits">100</span>
+                </div>
+
+                <div class="bet">
+                    <span class="stat__label">Bet</span>
+                    <button class="bet__btn" id="bet-down" aria-label="Decrease bet">−</button>
+                    <span class="stat__value" id="bet">5</span>
+                    <button class="bet__btn" id="bet-up" aria-label="Increase bet">+</button>
+                </div>
+
+                <button class="spin-btn" id="spin-btn">SPIN</button>
+            </div>
+        </section>
+        <section class="paytable">
+            <h2>Paytable <span>(3 in a row on an active line)</span></h2>
+            <ul id="paytable-list"></ul>
+        </section>
+    </main>
+</body>
+
+</html>

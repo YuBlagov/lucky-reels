@@ -99,3 +99,26 @@ function spinReel(reelIndex, finalColumn, duration) {
     setTimeout(resolve, duration);
   });
 }
+
+function evaluateGrid(grid) {
+  // grid[reel] = [top, middle, bottom]
+  const lines = [
+    { id: "line-top", cells: [[0, 0], [1, 0], [2, 0]] },
+    { id: "line-mid", cells: [[0, 1], [1, 1], [2, 1]] },
+    { id: "line-bot", cells: [[0, 2], [1, 2], [2, 2]] },
+    { id: "line-diag1", cells: [[0, 0], [1, 1], [2, 2]] },
+    { id: "line-diag2", cells: [[0, 2], [1, 1], [2, 0]] },
+  ];
+
+  let totalWin = 0;
+
+  for (const line of lines) {
+    const symbols = line.cells.map(([reel, row]) => grid[reel][row]);
+    if (symbols[0] === symbols[1] && symbols[1] === symbols[2]) {
+      totalWin += SYMBOLS[symbols[0]].payout;
+      document.getElementById(line.id).classList.add("is-active");
+    }
+  }
+
+  return totalWin;
+}

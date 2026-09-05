@@ -71,3 +71,40 @@ body {
   border-radius: 8px;
   position: relative;
 }
+
+.reel__strip {
+  display: flex;
+  flex-direction: column;
+  will-change: transform;
+}
+
+.symbol {
+  height: 100px;
+  min-height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.symbol svg {
+  width: 60px;
+  height: 60px;
+}
+
+.paylines {
+  position: absolute;
+  inset: 10px;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.payline {
+  stroke: var(--win-glow);
+  stroke-width: 3;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.payline.is-active {
+  opacity: 0.9;
+}

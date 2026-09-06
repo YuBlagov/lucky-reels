@@ -38,6 +38,27 @@ const SYMBOLS = {
 
 const SYMBOL_KEYS = Object.keys(SYMBOLS);
 const TOTAL_WEIGHT = SYMBOL_KEYS.reduce((sum, k) => sum + SYMBOLS[k].weight, 0);
+const BET_STEPS = [5, 10, 20, 50];
+
+const state = {
+  credits: 100,
+  betIndex: 0,
+  spinning: false,
+};
+
+const els = {
+  credits: document.getElementById("credits"),
+  bet: document.getElementById("bet"),
+  message: document.getElementById("message"),
+  spinBtn: document.getElementById("spin-btn"),
+  betUp: document.getElementById("bet-up"),
+  betDown: document.getElementById("bet-down"),
+};
+
+function updateHUD() {
+  els.credits.textContent = state.credits;
+  els.bet.textContent = BET_STEPS[state.betIndex];
+}
 
 function weightedRandomKey() {
   let r = Math.random() * TOTAL_WEIGHT;
@@ -117,8 +138,73 @@ function evaluateGrid(grid) {
     if (symbols[0] === symbols[1] && symbols[1] === symbols[2]) {
       totalWin += SYMBOLS[symbols[0]].payout;
       document.getElementById(line.id).classList.add("is-active");
+      line.cells.forEach(([reel, row]) => markWinningSymbol(reel, row));
     }
   }
 
   return totalWin;
 }
+
+function markWinningSymbol(reelIndex, row) {
+  const strip = document.getElementById(`strip-${reelIndex}`);
+  const fromEnd = 3 - row;
+  const el = strip.children[strip.children.length - fromEnd];
+  if (el) el.classList.add("is-winning");
+}
+
+function clearWinHighlights() {
+  document.querySelectorAll(".symbol.is-winning").forEach((el) => el.classList.remove("is-winning"));
+  document.querySelectorAll(".payline.is-active").forEach((el) => el.classList.remove("is-active"));
+}
+
+async function handleSpin() {
+  if (state.spinning) return;
+
+  const bet = BET_STEPS[state.betIndex];
+  if (state.credits < bet) {
+    els.message.textContent = "Not enough credits!";
+    return;
+  }
+
+  state.spinning = true;
+  els.spinBtn.disabled = true;
+  clearWinHighlights();
+
+  state.credits -= bet;
+  updateHUD();
+  els.message.textContent = "Spinning...";
+
+  const grid = [0, 1, 2].map(() => [weightedRandomKey(), weightedRandomKey(), weightedRandomKey()]);
+
+  await Promise.all(
+    grid.map((column, i) => spinReel(i, column, REEL_DURATIONS[i]))
+  );
+
+  const winnings = evaluateGrid(grid);
+  if (winnings > 0) {
+    state.credits += winnings;
+    els.message.textContent = `You won ${winnings} credits!`;
+  } else {
+    els.message.textContent = "No win this time — spin again!";
+  }
+  updateHUD();
+
+  state.spinning = false;
+  els.spinBtn.disabled = false;
+}
+els.spinBtn.addEventListener("click", handleSpin);
+els.betUp.addEventListener("click", () => {
+  if (state.betIndex < BET_STEPS.length - 1) {
+    state.betIndex++;
+    updateHUD();
+  }
+});
+els.betDown.addEventListener("click", () => {
+  if (state.betIndex > 0) {
+    state.betIndex--;
+    updateHUD();
+  }
+});
+
+updateHUD();
+

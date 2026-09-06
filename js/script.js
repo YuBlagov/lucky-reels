@@ -53,6 +53,7 @@ const els = {
   spinBtn: document.getElementById("spin-btn"),
   betUp: document.getElementById("bet-up"),
   betDown: document.getElementById("bet-down"),
+  paytableList: document.getElementById("paytable-list"),
 };
 
 function updateHUD() {
@@ -85,8 +86,6 @@ function renderInitialGrid() {
     strip.innerHTML = column.map(symbolMarkup).join("");
   }
 }
-
-renderInitialGrid();
 
 const SYMBOL_HEIGHT = 100;
 const STRIP_LENGTH = 24;
@@ -121,7 +120,7 @@ function spinReel(reelIndex, finalColumn, duration) {
   });
 }
 
-function evaluateGrid(grid) {
+function evaluateGrid(grid, bet) {
   // grid[reel] = [top, middle, bottom]
   const lines = [
     { id: "line-top", cells: [[0, 0], [1, 0], [2, 0]] },
@@ -136,7 +135,7 @@ function evaluateGrid(grid) {
   for (const line of lines) {
     const symbols = line.cells.map(([reel, row]) => grid[reel][row]);
     if (symbols[0] === symbols[1] && symbols[1] === symbols[2]) {
-      totalWin += SYMBOLS[symbols[0]].payout;
+      totalWin += SYMBOLS[symbols[0]].payout * bet;
       document.getElementById(line.id).classList.add("is-active");
       line.cells.forEach(([reel, row]) => markWinningSymbol(reel, row));
     }
@@ -180,12 +179,12 @@ async function handleSpin() {
     grid.map((column, i) => spinReel(i, column, REEL_DURATIONS[i]))
   );
 
-  const winnings = evaluateGrid(grid);
+  const winnings = evaluateGrid(grid, bet);
   if (winnings > 0) {
     state.credits += winnings;
     els.message.textContent = `You won ${winnings} credits!`;
   } else {
-    els.message.textContent = "No win this time — spin again!";
+    els.message.textContent = "No win this time - spin again!";
   }
   updateHUD();
 
@@ -206,5 +205,16 @@ els.betDown.addEventListener("click", () => {
   }
 });
 
+function renderPaytable() {
+  const rows = SYMBOL_KEYS.slice().sort((a, b) => SYMBOLS[b].payout - SYMBOLS[a].payout);
+  const html = rows.map((key) => {
+    const s = SYMBOLS[key];
+    return `<li>${s.svg} × 3 = ${s.payout}× bet</li>`;
+  }).join("");
+  els.paytableList.innerHTML = html;
+}
+
+renderInitialGrid();
+renderPaytable();
 updateHUD();
 

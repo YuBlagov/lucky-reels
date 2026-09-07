@@ -34,6 +34,11 @@ const SYMBOLS = {
     payout: 50,
     svg: `<svg viewBox="0 0 64 64"><text x="32" y="46" font-family="Segoe UI, sans-serif" font-size="44" font-weight="800" fill="#d81e3e" text-anchor="middle">7</text></svg>`,
   },
+  star: {
+    weight: 4,
+    payout: 0,
+    svg: `<svg viewBox="0 0 64 64"><polygon points="32,4 39,24 60,24 43,37 49,58 32,46 15,58 21,37 4,24 25,24" fill="#f2c14e"/></svg>`,
+},
 };
 
 const SYMBOL_KEYS = Object.keys(SYMBOLS);
@@ -44,6 +49,7 @@ const state = {
   credits: 100,
   betIndex: 0,
   spinning: false,
+  freeSpinsLeft: 0,
 };
 
 const els = {
@@ -54,11 +60,20 @@ const els = {
   betUp: document.getElementById("bet-up"),
   betDown: document.getElementById("bet-down"),
   paytableList: document.getElementById("paytable-list"),
+  freeSpinsBadge: document.getElementById("free-spins-badge"),
+  freeSpinsCount: document.getElementById("free-spins-count"),
 };
 
 function updateHUD() {
   els.credits.textContent = state.credits;
   els.bet.textContent = BET_STEPS[state.betIndex];
+
+  if (state.freeSpinsLeft > 0) {
+    els.freeSpinsBadge.hidden = false;
+    els.freeSpinsCount.textContent = state.freeSpinsLeft;
+  } else {
+    els.freeSpinsBadge.hidden = true;
+  }
 }
 
 function weightedRandomKey() {
@@ -144,6 +159,10 @@ function evaluateGrid(grid, bet) {
   return totalWin;
 }
 
+function countScatters(grid) {
+  return grid.flat().filter((symbol) => symbol === "star").length;
+}
+
 function markWinningSymbol(reelIndex, row) {
   const strip = document.getElementById(`strip-${reelIndex}`);
   const fromEnd = 3 - row;
@@ -160,7 +179,8 @@ async function handleSpin() {
   if (state.spinning) return;
 
   const bet = BET_STEPS[state.betIndex];
-  if (state.credits < bet) {
+  const isFreeSpin = state.freeSpinsLeft > 0;
+  if (!isFreeSpin && state.credits < bet) {
     els.message.textContent = "Not enough credits!";
     return;
   }
@@ -169,9 +189,15 @@ async function handleSpin() {
   els.spinBtn.disabled = true;
   clearWinHighlights();
 
-  state.credits -= bet;
+  if (isFreeSpin) {
+    state.freeSpinsLeft--;
+  } else {
+    state.credits -= bet;
+  }
   updateHUD();
-  els.message.textContent = "Spinning...";
+  els.message.textContent = isFreeSpin
+  ? `Free Spin! (${state.freeSpinsLeft} left)`
+  : "Spinning...";
 
   const grid = [0, 1, 2].map(() => [weightedRandomKey(), weightedRandomKey(), weightedRandomKey()]);
 
@@ -180,12 +206,23 @@ async function handleSpin() {
   );
 
   const winnings = evaluateGrid(grid, bet);
+  const multiplier = isFreeSpin ? 2 : 1;
+  const totalWinnings = winnings * multiplier;
   if (winnings > 0) {
-    state.credits += winnings;
-    els.message.textContent = `You won ${winnings} credits!`;
+    state.credits += totalWinnings;
+    els.message.textContent = isFreeSpin
+    ? `You won ${totalWinnings} credits! (x2 Free Spin bonus)`
+    : `You won ${winnings} credits!`;
   } else {
     els.message.textContent = "No win this time - spin again!";
   }
+
+  const scatterCount = countScatters(grid);
+  if (scatterCount >= 3) {
+    state.freeSpinsLeft += 5;
+    els.message.textContent = "🎉 BONUS! +5 FREE SPINS!";
+  }
+
   updateHUD();
 
   state.spinning = false;
@@ -206,12 +243,17 @@ els.betDown.addEventListener("click", () => {
 });
 
 function renderPaytable() {
-  const rows = SYMBOL_KEYS.slice().sort((a, b) => SYMBOLS[b].payout - SYMBOLS[a].payout);
+  const rows = SYMBOL_KEYS
+    .filter((key) => SYMBOLS[key].payout > 0)
+    .sort((a, b) => SYMBOLS[b].payout - SYMBOLS[a].payout);
+
   const html = rows.map((key) => {
     const s = SYMBOLS[key];
     return `<li>${s.svg} × 3 = ${s.payout}× bet</li>`;
   }).join("");
-  els.paytableList.innerHTML = html;
+
+  const scatterRow = `<li class="scatter-row">${SYMBOLS.star.svg} × 3+ anywhere = 5 Free Spins (2× win)</li>`;
+  els.paytableList.innerHTML = html + scatterRow;
 }
 
 renderInitialGrid();

@@ -252,3 +252,16 @@ body {
   height: 32px;
   flex-shrink: 0;
 }
+
+.free-spins-badge {
+  text-align: center;
+  font-weight: 700;
+  color: #1f1f1f;
+  background: linear-gradient(180deg, #f9d976, #f2c14e);
+  border: 2px solid #b8871f;
+  border-radius: 8px;
+  padding: 6px 12px;
+  margin: 8px auto;
+  width: fit-content;
+  letter-spacing: 0.5px;
+}

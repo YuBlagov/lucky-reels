@@ -175,6 +175,25 @@ function clearWinHighlights() {
   document.querySelectorAll(".payline.is-active").forEach((el) => el.classList.remove("is-active"));
 }
 
+const LINE_ROWS = [
+  [0, 0, 0], // top row
+  [1, 1, 1], // middle row
+  [2, 2, 2], // bottom row
+  [0, 1, 2], // diagonal 1
+  [2, 1, 0], // diagonal 2
+];
+
+// Common symbols are excluded so anticipation stays meaningful
+const LOW_VALUE = ["cherry", "lemon"];
+
+function hasPendingCombo(grid) {
+  return LINE_ROWS.some(([row0, row1]) => {
+    const s0 = grid[0][row0];
+    const s1 = grid[1][row1];
+    return s0 === s1 && !LOW_VALUE.includes(s0);
+  });
+}
+
 async function handleSpin() {
   if (state.spinning) return;
 
@@ -200,10 +219,22 @@ async function handleSpin() {
   : "Spinning...";
 
   const grid = [0, 1, 2].map(() => [weightedRandomKey(), weightedRandomKey(), weightedRandomKey()]);
+  const anticipation = grid[0].includes("star") && grid[1].includes("star") || hasPendingCombo(grid);
+  
 
+  const durations = anticipation
+    ? [REEL_DURATIONS[0], REEL_DURATIONS[1], REEL_DURATIONS[2] + 900]
+    : REEL_DURATIONS;
+  if (anticipation) {
+    document.querySelectorAll(".reel")[2].classList.add("is-anticipating");
+    els.message.textContent = "Anticipation...";
+  }
   await Promise.all(
-    grid.map((column, i) => spinReel(i, column, REEL_DURATIONS[i]))
+    grid.map((column, i) => spinReel(i, column, durations[i]))
   );
+  if (anticipation) {
+    document.querySelectorAll(".reel")[2].classList.remove("is-anticipating");
+  }
 
   const winnings = evaluateGrid(grid, bet);
   const multiplier = isFreeSpin ? 2 : 1;
